@@ -22,14 +22,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const CharacterHub = () => {
   const navigate = useNavigate();
-  const { characters, setCharacters, apiKey, chapters } = useStory();
+  const { characters, setCharacters, chapters } = useStory();
   const [activeTab, setActiveTab] = useState('Characters'); // Characters vs Relationship Map
   const [loadingMap, setLoadingMap] = useState(false);
   const [relationships, setRelationships] = useState([]);
   const [selectedChar, setSelectedChar] = useState(null);
 
   const generateMap = async () => {
-    if (!apiKey || characters.length < 2) return;
+    if (characters.length < 2) return;
     setLoadingMap(true);
     
     const systemPrompt = "You are a literary analyst specialized in deep character bonds (Family, Love, Friendship).";
@@ -40,7 +40,7 @@ const CharacterHub = () => {
     Format as JSON: { "relationships": [{ "from": "...", "to": "...", "type": "Family/Love/Friendship", "intensity": 1-10, "notes": "..." }] }`;
 
     try {
-      const result = await generateAIResponse(userPrompt, apiKey, systemPrompt, {
+      const result = await generateAIResponse(userPrompt, systemPrompt, {
         type: "object",
         properties: {
           relationships: {

@@ -1,65 +1,58 @@
-export const generateAIResponse = async (prompt, apiKey, systemInstruction = null, responseSchema = null) => {
-  if (!apiKey) {
-    throw new Error("AI API Key is missing.");
-  }
+import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 
-  // Using the Vite Proxy /api/ai -> https://openrouter.ai
-  const endpoint = "/api/ai/api/v1/chat/completions";
-  
-  // High-performance model on OpenRouter
-  const model = "google/gemini-2.0-flash-001"; 
+const client = new BedrockRuntimeClient({
+  region: import.meta.env.VITE_AWS_REGION || "us-east-1",
+  credentials: {
+    accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+    secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
+  },
+});
 
-  const messages = [];
-  if (systemInstruction) {
-    messages.push({ role: "system", content: systemInstruction });
-  }
-  messages.push({ role: "user", content: prompt });
+export const generateAIResponse = async (prompt, systemInstruction = null, responseSchema = null) => {
+  const modelId = import.meta.env.VITE_BEDROCK_MODEL_ID || "us.amazon.nova-lite-v1:0";
 
-  const payload = {
-    model: model,
-    messages: messages,
-    temperature: 0.7,
-    max_tokens: 4096,
-    stream: false
-  };
+  const messages = [
+    {
+      role: "user",
+      content: [{ text: prompt }],
+    },
+  ];
+
+  const system = systemInstruction ? [{ text: systemInstruction }] : undefined;
 
   if (responseSchema) {
-    payload.response_format = { type: "json_object" };
-    if (!prompt.toLowerCase().includes("json")) {
-      messages[messages.length-1].content += "\n\nIMPORTANT: Return ONLY a valid JSON object.";
-    }
+    messages[messages.length - 1].content[0].text += "\n\nIMPORTANT: Return ONLY a valid JSON object.";
   }
 
-  console.log(`[OpenRouter] Requesting ${model}...`);
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-      "HTTP-Referer": "http://localhost:5176",
-      "X-OpenRouter-Title": "AI Novelist 2.0"
+  const command = new ConverseCommand({
+    modelId,
+    messages,
+    system,
+    inferenceConfig: {
+      maxTokens: 4096,
+      temperature: 0.7,
     },
-    body: JSON.stringify(payload),
   });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: { message: "OpenRouter API error." } }));
-    throw new Error(err.error?.message || `API Error: ${response.status}`);
-  }
+  try {
+    console.log(`[AWS Bedrock] Requesting ${modelId}...`);
+    const response = await client.send(command);
+    const text = response.output.message.content[0].text;
 
-  const data = await response.json();
-  const text = data.choices?.[0]?.message?.content || "";
-  
-  if (responseSchema) {
-    try {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      const cleanJson = jsonMatch ? jsonMatch[0] : text;
-      return JSON.parse(cleanJson);
-    } catch(e) {
-      console.error("Failed to parse JSON from OpenRouter:", text);
-      throw new Error("AI returned invalid JSON.");
+    if (responseSchema) {
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const cleanJson = jsonMatch ? jsonMatch[0] : text;
+        return JSON.parse(cleanJson);
+      } catch (e) {
+        console.error("Failed to parse JSON from Bedrock:", text);
+        throw new Error("AI returned invalid JSON.");
+      }
     }
-  }
 
-  return text;
+    return text;
+  } catch (err) {
+    console.error("AWS Bedrock Error:", err);
+    throw new Error(err.message || "Failed to generate AI response.");
+  }
 };

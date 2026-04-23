@@ -17,7 +17,8 @@ import {
   PlusCircle,
   Users,
   Search,
-  BookCopy
+  BookCopy,
+  Compass
 } from 'lucide-react';
 import { useStory } from '../context/StoryContext';
 import { generateAIResponse } from '../lib/gemini';
@@ -28,7 +29,6 @@ const ChapterEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { 
-    apiKey, 
     chapters, 
     setChapters, 
     characters, 
@@ -60,6 +60,7 @@ const ChapterEditor = () => {
   const [detectedCharacters, setDetectedCharacters] = useState({ new_characters: [], existing_updates: [] });
   const [showCharacterCards, setShowCharacterCards] = useState(false);
   const [scanningCharacters, setScanningCharacters] = useState(false);
+  const [seedPrompt, setSeedPrompt] = useState("");
 
   const editorRef = useRef(null);
 
@@ -82,7 +83,7 @@ const ChapterEditor = () => {
   };
 
   const syncStoryState = async () => {
-    if (!apiKey || !content) return;
+    if (!content) return;
     setIsSyncing(true);
     setSyncComplete(false);
 
@@ -117,7 +118,7 @@ const ChapterEditor = () => {
     `;
 
     try {
-      const result = await generateAIResponse(userPrompt, apiKey, systemPrompt, {
+      const result = await generateAIResponse(userPrompt, systemPrompt, {
         type: "object",
         properties: {
           timeline_events: {
@@ -213,7 +214,7 @@ const ChapterEditor = () => {
   };
 
   const extractScenes = async () => {
-    if (!apiKey || !content) return;
+    if (!content) return;
     setIsExtractingScenes(true);
 
     const systemPrompt = "You are a cinematic director and environment designer. Segment the chapter into logical scenes and extract visual details.";
@@ -247,7 +248,7 @@ const ChapterEditor = () => {
     `;
 
     try {
-      const result = await generateAIResponse(userPrompt, apiKey, systemPrompt, {
+      const result = await generateAIResponse(userPrompt, systemPrompt, {
         type: "object",
         properties: {
           scenes: {
@@ -284,7 +285,7 @@ const ChapterEditor = () => {
   };
 
   const generateScreenplay = async () => {
-    if (!apiKey || !content) return;
+    if (!content) return;
     setIsGeneratingScreenplay(true);
     setShowScreenplay(true);
 
@@ -307,7 +308,7 @@ const ChapterEditor = () => {
     `;
 
     try {
-      const screenplay = await generateAIResponse(userPrompt, apiKey, systemPrompt);
+      const screenplay = await generateAIResponse(userPrompt, systemPrompt);
       setScreenplayContent(screenplay);
     } catch (e) {
       console.error("Screenplay generation failed", e);
@@ -317,7 +318,6 @@ const ChapterEditor = () => {
   };
 
   const handleGenerateChapter = async () => {
-    if (!apiKey) return;
     setLoading(true);
     setError(null);
 
@@ -339,6 +339,9 @@ const ChapterEditor = () => {
       Previous Chapter Context: 
       ${prevChapters || "This is the start of the novel."}
       
+      ADDITIONAL INSTRUCTIONS/SEED:
+      ${seedPrompt || "No additional instructions."}
+      
       (Proceed with writing the chapter following the established plot and character arcs)
       
       Write the full content of this chapter now (~1000-1500 words). 
@@ -346,7 +349,7 @@ const ChapterEditor = () => {
     `;
 
     try {
-      const text = await generateAIResponse(userPrompt, apiKey, systemPrompt);
+      const text = await generateAIResponse(userPrompt, systemPrompt);
       setContent(text);
       handleDetectCharacters(text);
     } catch (err) {
@@ -355,8 +358,8 @@ const ChapterEditor = () => {
       setLoading(false);
     }
   };
-  const handleDetectCharacters = async (text) => {
-    if (!apiKey || !text) return;
+  const handleDetectCharacters = async (textToScan = content) => {
+    if (!textToScan) return;
 
     setScanningCharacters(true);
     setShowCharacterCards(true); // Show the section so user sees something is happening
@@ -379,7 +382,7 @@ const ChapterEditor = () => {
     }`;
 
     try {
-      const result = await generateAIResponse(userPrompt, apiKey, systemPrompt, {
+      const result = await generateAIResponse(userPrompt, systemPrompt, {
         type: "object",
         properties: {
           new_characters: {
@@ -422,7 +425,7 @@ const ChapterEditor = () => {
     const userPrompt = `Original text: "${selectedText}"`;
 
     try {
-      const rewritten = await generateAIResponse(userPrompt, apiKey, systemPrompt);
+      const rewritten = await generateAIResponse(userPrompt, systemPrompt);
       if (window.getSelection().toString()) {
         const sel = window.getSelection();
         const range = sel.getRangeAt(0);
@@ -563,14 +566,34 @@ const ChapterEditor = () => {
 
         <aside className="glass-panel" style={{ width: '380px', height: '100%', borderLeft: '1px solid var(--border-color)', borderRadius: 0, padding: '1.5rem', overflowY: 'auto' }}>
           <div style={{ marginBottom: '2rem' }}>
+            <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'block' }}>Generation Seed</label>
+            <textarea 
+              value={seedPrompt}
+              onChange={(e) => setSeedPrompt(e.target.value)}
+              placeholder="e.g. Focus on the tension between characters, make it rainy..."
+              style={{
+                width: '100%',
+                height: '80px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid var(--border-color)',
+                borderRadius: '8px',
+                padding: '10px',
+                color: 'white',
+                fontSize: '0.85rem',
+                resize: 'none',
+                marginBottom: '1rem'
+              }}
+            />
             <button 
               className="btn btn-primary" 
-              style={{ width: '100%' }} 
+              style={{ width: '100%', marginBottom: '1rem' }}
               onClick={handleGenerateChapter}
               disabled={loading}
             >
-              {loading ? <Loader2 className="animate-spin" /> : <><Sparkles size={16} /> Generate Chapter Content</>}
+              {loading ? <Loader2 className="animate-spin" /> : <><Sparkles size={16} /> {content ? 'Regenerate Chapter' : 'Generate Chapter'}</>}
             </button>
+          </div>
           </div>
 
           <div style={{ marginBottom: '2.5rem' }}>

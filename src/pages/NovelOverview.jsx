@@ -11,7 +11,8 @@ import {
   Clock,
   Layout,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  Compass
 } from 'lucide-react';
 import { useStory } from '../context/StoryContext';
 import { motion } from 'framer-motion';

@@ -24,7 +24,7 @@ import { generateAIResponse } from '../lib/gemini';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const WorldBuilder = () => {
-  const { worldData, setWorldData, apiKey, novelData, chapters } = useStory();
+  const { worldData, setWorldData, novelData, chapters } = useStory();
   const navigate = useNavigate();
   const [step, setStep] = useState(worldData ? 2 : 0); // 0: Theme, 1: Interview, 2: Review
   const [loading, setLoading] = useState(false);
@@ -85,7 +85,7 @@ const WorldBuilder = () => {
     Format as JSON: { "questions": ["...", "...", "...", "...", "...", "...", "...", "..."] }`;
 
     try {
-      const result = await generateAIResponse(userPrompt, apiKey, systemPrompt, {
+      const result = await generateAIResponse(userPrompt, systemPrompt, {
         type: "object",
         properties: {
           questions: { type: "array", items: { type: "string" }, minItems: 8, maxItems: 8 }
@@ -122,7 +122,7 @@ const WorldBuilder = () => {
     `;
 
     try {
-      const result = await generateAIResponse(summaryPrompt, apiKey, "You are a master storyteller.", {
+      const result = await generateAIResponse(summaryPrompt, "You are a master storyteller.", {
         type: "object",
         properties: {
           summary: { type: "string" }
@@ -176,7 +176,7 @@ const WorldBuilder = () => {
     }`;
 
     try {
-      const result = await generateAIResponse(userPrompt, apiKey, systemPrompt, {
+      const result = await generateAIResponse(userPrompt, systemPrompt, {
         type: "object",
         properties: {
           theme: { type: "string" },

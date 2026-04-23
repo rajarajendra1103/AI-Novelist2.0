@@ -9,7 +9,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
 
   const features = [
-    { icon: Zap, title: "Gemini-Powered", desc: "Experience the magic of deep AI writing models that understand Narrative POV and literary structure." },
+    { icon: Zap, title: "Amazon Nova-Powered", desc: "Experience the magic of deep AI writing models that understand Narrative POV and literary structure." },
     { icon: Book, title: "Story Architects", desc: "Let AI build your plot structure, chapters, and twists based on your most basic ideas." },
     { icon: Layout, title: "Structured Outlining", desc: "Generate chapter-by-chapter summaries including character arcs and story progression." },
     { icon: Users, title: "Character Engine", desc: "Automatically track characters and their evolving relationships across every single chapter." },

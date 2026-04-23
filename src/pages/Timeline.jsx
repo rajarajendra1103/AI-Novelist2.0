@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Timeline = () => {
   const navigate = useNavigate();
-  const { timelineEvents, setTimelineEvents, chapters, apiKey, novelData } = useStory();
+  const { timelineEvents, setTimelineEvents, chapters, novelData } = useStory();
   const [filter, setFilter] = useState('All');
   const [loading, setLoading] = useState(false);
 
@@ -62,7 +62,7 @@ const Timeline = () => {
     }`;
 
     try {
-      const result = await generateAIResponse(userPrompt, apiKey, systemPrompt, {
+      const result = await generateAIResponse(userPrompt, systemPrompt, {
         type: "object",
         properties: {
           events: {

@@ -16,7 +16,7 @@ import { generateAIResponse } from '../lib/gemini';
 import { motion } from 'framer-motion';
 
 const HomePage = () => {
-  const { apiKey, setApiKey, setNovelData, setChapters, setCharacters } = useStory();
+  const { setNovelData, setChapters, setCharacters } = useStory();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -33,10 +33,6 @@ const HomePage = () => {
   const povs = ["First Person", "Third Person Limited", "Third Person Omniscient", "Second Person"];
 
   const handleGenerateOutline = async () => {
-    if (!apiKey) {
-      setError("Please enter your Gemini API Key in the settings.");
-      return;
-    }
     if (!prompt.trim()) {
       setError("Please describe your story idea first.");
       return;
@@ -73,7 +69,7 @@ const HomePage = () => {
     `;
 
     try {
-      const result = await generateAIResponse(userPrompt, apiKey, systemPrompt, "application/json");
+      const result = await generateAIResponse(userPrompt, systemPrompt, "application/json");
 
       setNovelData(result);
       
@@ -88,14 +84,12 @@ const HomePage = () => {
       try {
         const systemPromptWrite = "You are a professional novelist. Write the full content of a chapter based on the outline.";
         
-        // Gen Chapter 1
-        const ch1Prompt = `Write Chapter 1 for "${result.title}". Overview: ${result.premise}. Chapter Goal: ${result.outline[0].summary}`;
-        const ch1Content = await generateAIResponse(ch1Prompt, apiKey, systemPromptWrite);
-        firstTwoChapters[0].content = ch1Content;
+        const [ch1Content, ch2Content] = await Promise.all([
+          generateAIResponse(`Write Chapter 1 for "${result.title}". Overview: ${result.premise}. Chapter Goal: ${result.outline[0].summary}`, systemPromptWrite),
+          generateAIResponse(`Write Chapter 2 for "${result.title}". Overview: ${result.premise}. Chapter Goal: ${result.outline[1].summary}`, systemPromptWrite)
+        ]);
 
-        // Gen Chapter 2
-        const ch2Prompt = `Write Chapter 2 for "${result.title}". Previous Context: ${ch1Content.substring(0, 1000)}. Chapter Goal: ${result.outline[1].summary}`;
-        const ch2Content = await generateAIResponse(ch2Prompt, apiKey, systemPromptWrite);
+        firstTwoChapters[0].content = ch1Content;
         firstTwoChapters[1].content = ch2Content;
       } catch (e) {
         console.warn("Auto-generation of first chapters failed, but outline is saved.", e);

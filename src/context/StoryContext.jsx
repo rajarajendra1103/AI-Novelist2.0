@@ -5,7 +5,6 @@ const StoryContext = createContext();
 export const useStory = () => useContext(StoryContext);
 
 export const StoryProvider = ({ children }) => {
-  const [apiKey, setApiKey] = useState("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");
   const [novelData, setNovelData] = useState(null);
   const [chapters, setChapters] = useState([]);
   const [characters, setCharacters] = useState([]);
@@ -17,16 +16,7 @@ export const StoryProvider = ({ children }) => {
   const [productionSettings, setProductionSettings] = useState({ aspect: '16:9', res: '4K', motion: 'High' });
   const [frameVisuals, setFrameVisuals] = useState({}); // { frameId: { type: 'image'|'video', url: '...' } }
 
-  // Save API key                     
-  useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem('gemini_api_key', apiKey);
-    }
-  }, [apiKey]);
-
   const value = {
-    apiKey,
-    setApiKey,
     novelData,
     setNovelData,
     chapters,

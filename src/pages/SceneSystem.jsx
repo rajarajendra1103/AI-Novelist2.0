@@ -35,7 +35,6 @@ const SceneSystem = () => {
     chapters, 
     scenes, 
     setScenes, 
-    apiKey,
     visualDNA,
     setVisualDNA
   } = useStory();
@@ -57,7 +56,7 @@ const SceneSystem = () => {
   ];
 
   const handleExtractScenes = async () => {
-    if (!apiKey || !currentChapter?.content) return;
+    if (!currentChapter?.content) return;
     setIsExtracting(true);
 
     const systemPrompt = "You are a cinematic director and environment designer. Segment the chapter into logical scenes and extract visual details.";
@@ -88,7 +87,7 @@ const SceneSystem = () => {
     `;
 
     try {
-      const result = await generateAIResponse(userPrompt, apiKey, systemPrompt, {
+      const result = await generateAIResponse(userPrompt, systemPrompt, {
         type: "object",
         properties: {
           scenes: {
@@ -125,7 +124,7 @@ const SceneSystem = () => {
   };
 
   const handleGenerateScreenplay = async () => {
-    if (!apiKey || !currentChapter?.content) return;
+    if (!currentChapter?.content) return;
     setIsGeneratingScreenplay(true);
     setShowScreenplay(true);
 
@@ -141,7 +140,7 @@ const SceneSystem = () => {
     `;
 
     try {
-      const screenplay = await generateAIResponse(userPrompt, apiKey, systemPrompt);
+      const screenplay = await generateAIResponse(userPrompt, systemPrompt);
       setScreenplayContent(screenplay);
     } catch (e) {
       console.error("Screenplay failed", e);
