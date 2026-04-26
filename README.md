@@ -81,9 +81,7 @@ Built with a focus on **visual excellence** and **intuitive workflows**, the pla
 3. **Configure environment variables:**
    Create a `.env` file in the root directory and add your credentials:
    ```env
-   VITE_GEMINI_API_KEY=your_key_here
-   VITE_AWS_ACCESS_KEY=your_key_here
-   VITE_AWS_SECRET_KEY=your_key_here
+   VITE_YOUR_API_KEY=your_key_here
    ```
 
 4. **Launch the development server:**
