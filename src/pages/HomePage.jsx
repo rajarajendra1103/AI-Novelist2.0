@@ -26,11 +26,31 @@ const HomePage = () => {
   const [writingStyle, setWritingStyle] = useState("Literary");
   const [selectedTones, setSelectedTones] = useState(["Dramatic"]);
   const [pov, setPov] = useState("Third Person Limited");
+  const [structuralStyle, setStructuralStyle] = useState("Linear");
 
-  const genres = ["Fantasy", "Sci-Fi", "Thriller", "Romance", "Horror", "Historical Fiction", "Mystery", "Cyberpunk", "SteamPunk"];
-  const styles = ["Literary", "Fast-paced", "Descriptive", "Minimalist", "Poetic", "Journalistic"];
-  const tones = ["Dramatic", "Suspenseful", "Emotional", "Humorous", "Dark", "Optimistic", "Melancholic"];
+  const genres = ["Fantasy", "Sci-Fi", "Thriller", "Romance", "Horror", "Historical Fiction", "Literary Fiction", "Mystery", "Cyberpunk", "SteamPunk"];
+  const styles = ["Literary", "Fast-paced", "Descriptive", "Minimalist", "Poetic", "Journalistic", "Plot-driven", "Character-driven"];
+  const tones = ["Dramatic", "Suspenseful", "Emotional", "Humorous", "Dark", "Optimistic", "Melancholic", "Cynical", "Lighthearted", "Whimsical"];
   const povs = ["First Person", "Third Person Limited", "Third Person Omniscient", "Second Person"];
+  const structuralStylesList = ["Linear", "Non-linear", "Parallel Narrative", "Framed Narrative"];
+
+  const styleExplanations = {
+    "Literary": { desc: "Focuses on elevated language and deep character exploration.", ex: "The sun was a dying ember, clutching at the hem of the horizon." },
+    "Fast-paced": { desc: "Driven by action and rapid plot progression.", ex: "He hit the ground running as the explosion tore through the wall." },
+    "Descriptive": { desc: "Rich in sensory detail and atmospheric world-building.", ex: "The air smelled of ozone and ancient parchment, thick with the weight of centuries." },
+    "Minimalist": { desc: "Concise and direct, using sparse language for impact.", ex: "The door opened. He saw her. She was gone." },
+    "Poetic": { desc: "Uses lyrical language, metaphor, and rhythmic flow.", ex: "Her laughter was a silver thread winding through the silence of the room." },
+    "Journalistic": { desc: "Objective, clear, and reportage-style narrative.", ex: "The suspect was last seen at 4:00 PM near the abandoned warehouse." },
+    "Plot-driven": { desc: "Prioritizes events, narrative twists, and external conflict.", ex: "One wrong turn led to a discovery that would change the world forever." },
+    "Character-driven": { desc: "Focuses on internal growth, psychology, and relationships.", ex: "She realized her father's silence was the only thing she had inherited." }
+  };
+
+  const structuralExplanations = {
+    "Linear": { desc: "Events unfold in straightforward chronological order.", ex: "First they met, then they fought, and finally they found peace." },
+    "Non-linear": { desc: "Events are presented out of order using flashbacks or flash-forwards.", ex: "It began with the trial, then jumped back to the crime committed years ago." },
+    "Parallel Narrative": { desc: "Multiple story threads running simultaneously across different characters.", ex: "While the King planned war, a peasant boy discovered a secret that could stop it." },
+    "Framed Narrative": { desc: "A story within a story, often told by a narrator to an audience.", ex: "An old man tells a group of travelers the epic legend of his youth." }
+  };
 
   const handleGenerateOutline = async () => {
     if (!prompt.trim()) {
@@ -49,6 +69,7 @@ const HomePage = () => {
       Create a novel plan based on this idea: "${prompt}"
       Genres: ${selectedGenres.join(", ")}
       Writing Style: ${writingStyle}
+      Structural Style: ${structuralStyle}
       Tones: ${selectedTones.join(", ")}
       Narrative POV: ${pov}
 
@@ -224,6 +245,10 @@ const HomePage = () => {
                   <select value={writingStyle} onChange={(e) => setWritingStyle(e.target.value)} disabled={loading}>
                     {styles.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                    <p><strong>{writingStyle}:</strong> {styleExplanations[writingStyle]?.desc}</p>
+                    <p style={{ fontStyle: 'italic', opacity: 0.8 }}>Ex: "{styleExplanations[writingStyle]?.ex}"</p>
+                  </div>
                 </div>
                 <div className="select-group">
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
@@ -232,6 +257,19 @@ const HomePage = () => {
                   <select value={pov} onChange={(e) => setPov(e.target.value)} disabled={loading}>
                     {povs.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
+                </div>
+              </div>
+
+              <div className="select-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>
+                  <Sparkles size={14} /> Structural Style
+                </label>
+                <select value={structuralStyle} onChange={(e) => setStructuralStyle(e.target.value)} disabled={loading}>
+                  {structuralStylesList.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                  <p><strong>{structuralStyle}:</strong> {structuralExplanations[structuralStyle]?.desc}</p>
+                  <p style={{ fontStyle: 'italic', opacity: 0.8 }}>Ex: "{structuralExplanations[structuralStyle]?.ex}"</p>
                 </div>
               </div>
             </div>

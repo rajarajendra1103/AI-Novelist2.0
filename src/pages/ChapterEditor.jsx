@@ -373,7 +373,7 @@ const ChapterEditor = () => {
     1. If they are ALREADY in the hub, provide a "development" snippet (how they changed or what we learned new).
     2. If they are NEW, provide a name and a brief "initial_description".
     
-    Text snippet: ${text.substring(0, 8000)}
+    Text snippet: ${textToScan.substring(0, 8000)}
     
     Format as JSON: 
     { 

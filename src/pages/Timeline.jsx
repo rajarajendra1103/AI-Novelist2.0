@@ -14,6 +14,7 @@ import {
   Star,
   Zap,
   Loader2,
+  RefreshCw,
   Compass
 } from 'lucide-react';
 import { useStory } from '../context/StoryContext';
@@ -26,8 +27,8 @@ const Timeline = () => {
   const [filter, setFilter] = useState('All');
   const [loading, setLoading] = useState(false);
 
-  // Example categories: World History, Major Event, Chapter Milestone, Character Arc
-  const categories = ['All', 'History', 'Major', 'Chapter', 'Character'];
+  // Categories: History, Chapter Milestone, Character Arc
+  const categories = ['All', 'History', 'Chapter', 'Character'];
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', description: '', category: 'History', time: '', impact: '' });
@@ -39,24 +40,24 @@ const Timeline = () => {
     setNewEvent({ title: '', description: '', category: 'History', time: '', impact: '' });
   };
 
-  const generateTimelineAutomatically = async () => {
+  const scanChaptersForEvents = async () => {
     if (!chapters || chapters.length === 0) {
-      alert("Please write at least one chapter to generate a timeline.");
+      alert("Please write at least one chapter to scan.");
       return;
     }
     setLoading(true);
 
-    const systemPrompt = "You are a story analyst. Extract major timeline events from chapter content.";
-    const userPrompt = `Analyze these chapters and extract a chronological timeline of major events:
-    ${chapters.map((c, i) => `Chapter ${i+1} Title: ${c.title}\nContent: ${c.content.substring(0, 1000)}...`).join("\n\n")}
+    const systemPrompt = "You are a story analyst. Extract major timeline events from chapter content and categorize them accurately.";
+    const userPrompt = `Analyze these chapters and extract a chronological timeline of events:
+    ${chapters.map((c, i) => `Chapter ${i+1} Title: ${c.title}\nContent: ${c.content.substring(0, 1500)}...`).join("\n\n")}
     
-    For each major event, provide: Title, Category (History/Major/Chapter/Character), Time/Era, and a brief Description.
+    For each event, provide: Title, Category (History/Chapter/Character), Time/Era, and a brief Description.
     Also include the Chapter ID (index starting from 0) if the event happened in a specific chapter.
     
     Format as JSON: 
     { 
       "events": [
-        { "title": "...", "category": "...", "time": "...", "description": "...", "chapterId": 0 },
+        { "title": "...", "category": "History|Chapter|Character", "time": "...", "description": "...", "chapterId": 0 },
         "..."
       ]
     }`;
@@ -71,7 +72,7 @@ const Timeline = () => {
               type: "object",
               properties: {
                 title: { type: "string" },
-                category: { type: "string" },
+                category: { type: "string", enum: ["History", "Chapter", "Character"] },
                 time: { type: "string" },
                 description: { type: "string" },
                 chapterId: { type: "number" }
@@ -85,7 +86,7 @@ const Timeline = () => {
       setTimelineEvents(newEvents);
     } catch (e) {
       console.error(e);
-      alert("Failed to generate timeline. Ensure you have chapters written.");
+      alert("Failed to scan chapters. Ensure you have chapters with content.");
     } finally {
       setLoading(false);
     }
@@ -94,7 +95,6 @@ const Timeline = () => {
   const getCategoryIcon = (category) => {
     switch (category) {
       case 'History': return <Globe size={16} />;
-      case 'Major': return <Sparkles size={16} />;
       case 'Chapter': return <BookOpen size={16} />;
       case 'Character': return <User size={16} />;
       default: return <Star size={16} />;
@@ -104,8 +104,7 @@ const Timeline = () => {
   const getCategoryColor = (category) => {
     switch (category) {
       case 'History': return '#3b82f6'; // blue
-      case 'Major': return '#fbbf24'; // amber
-      case 'Chapter': return '#10b981'; // violet
+      case 'Chapter': return '#10b981'; // green
       case 'Character': return '#ec4899'; // pink
       default: return '#94a3b8';
     }
@@ -128,7 +127,7 @@ const Timeline = () => {
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button 
-            onClick={generateTimelineAutomatically}
+            onClick={scanChaptersForEvents}
             disabled={loading}
             className="btn-primary" 
             style={{ 
@@ -138,11 +137,11 @@ const Timeline = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
-              background: 'linear-gradient(135deg, #10b981, #3b82f6)'
+              background: 'linear-gradient(135deg, #3b82f6, #2563eb)'
             }}
           >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <Zap size={16} />} 
-            {loading ? 'Analyzing Chapters...' : 'AI Generate from Chapters'}
+            {loading ? <RefreshCw size={16} className="animate-spin" /> : <RefreshCw size={16} />} 
+            {loading ? 'Scanning Chapters...' : 'Scan Chapters'}
           </button>
 
           <button 

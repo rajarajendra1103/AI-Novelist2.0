@@ -17,6 +17,8 @@ import {
   GraduationCap,
   ArrowLeft,
   Loader2,
+  RefreshCw,
+  CheckCircle2,
   Compass
 } from 'lucide-react';
 import { useStory } from '../context/StoryContext';
@@ -28,6 +30,8 @@ const WorldBuilder = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(worldData ? 2 : 0); // 0: Theme, 1: Interview, 2: Review
   const [loading, setLoading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncComplete, setSyncComplete] = useState(false);
   const [theme, setTheme] = useState("");
   const [customTheme, setCustomTheme] = useState("");
   const [questions, setQuestions] = useState([]);
@@ -204,6 +208,69 @@ const WorldBuilder = () => {
     }
   };
 
+  const syncWorldWithChapters = async () => {
+    if (!chapters || chapters.length === 0) return;
+    
+    setIsSyncing(true);
+    setSyncComplete(false);
+
+    // Filter chapters that have content
+    const chapterTexts = chapters
+      .filter(c => c.content)
+      .map(c => `Chapter ${c.chapter}: ${c.title}\n${c.content}`)
+      .join("\n\n---\n\n");
+
+    if (!chapterTexts) {
+      setIsSyncing(false);
+      return;
+    }
+
+    const systemPrompt = "You are a master World Archivist. Your job is to read chapter content and extract new world-building details, locations, factions, and rules to keep the world codex updated.";
+    const userPrompt = `
+      CURRENT WORLD DATA:
+      - Theme: ${worldData?.theme}
+      - Summary: ${worldData?.aiSummary}
+      - Existing Features: ${JSON.stringify(worldData?.customFeatures)}
+
+      NEW CHAPTER CONTENT TO ANALYZE:
+      ${chapterTexts.substring(0, 12000)}
+
+      TASK:
+      1. Identify any NEW locations, factions, cultural details, or world rules mentioned.
+      2. Refine the cumulative world summary if major shifts occurred.
+      
+      Format as JSON:
+      {
+        "new_features": ["Feature 1", "Feature 2"],
+        "summary_revision": "A revised 3-sentence summary of the world."
+      }
+    `;
+
+    try {
+      const result = await generateAIResponse(userPrompt, systemPrompt, {
+        type: "object",
+        properties: {
+          new_features: { type: "array", items: { type: "string" } },
+          summary_revision: { type: "string" }
+        }
+      });
+
+      if (result) {
+        setWorldData(prev => ({
+          ...prev,
+          customFeatures: [...new Set([...(prev?.customFeatures || []), ...(result.new_features || [])])],
+          aiSummary: result.summary_revision || prev?.aiSummary
+        }));
+        setSyncComplete(true);
+        setTimeout(() => setSyncComplete(false), 3000);
+      }
+    } catch (e) {
+      console.error("World sync failed", e);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const addFeature = () => {
     if (!newFeature.trim()) return;
     const updated = [...customFeatures, newFeature.trim()];
@@ -241,18 +308,40 @@ const WorldBuilder = () => {
             </button>
           )}
           {step > 0 && (
-            <button 
-              onClick={() => {
-                  if (window.confirm("Restart world building? Current progress will be lost.")) {
-                      setStep(0);
-                      setWorldData(null);
-                  }
-              }}
-              className="btn-secondary"
-              style={{ padding: '8px 16px', fontSize: '0.8rem' }}
-            >
-              <ArrowLeft size={14} /> Reset World
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button 
+                onClick={syncWorldWithChapters}
+                disabled={isSyncing || !chapters?.some(c => c.content)}
+                className="btn-secondary"
+                style={{ 
+                  padding: '8px 16px', 
+                  fontSize: '0.8rem',
+                  borderColor: syncComplete ? '#10b981' : 'var(--border-color)',
+                  color: syncComplete ? '#10b981' : 'white'
+                }}
+              >
+                {isSyncing ? (
+                  <RefreshCw size={14} className="animate-spin" />
+                ) : syncComplete ? (
+                  <CheckCircle2 size={14} />
+                ) : (
+                  <RefreshCw size={14} />
+                )}
+                <span style={{ marginLeft: '6px' }}>{isSyncing ? 'Scanning...' : syncComplete ? 'Synced' : 'Scan Chapters'}</span>
+              </button>
+              <button 
+                onClick={() => {
+                    if (window.confirm("Restart world building? Current progress will be lost.")) {
+                        setStep(0);
+                        setWorldData(null);
+                    }
+                }}
+                className="btn-secondary"
+                style={{ padding: '8px 16px', fontSize: '0.8rem' }}
+              >
+                <ArrowLeft size={14} /> Reset World
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -429,7 +518,7 @@ const WorldBuilder = () => {
                     <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Add unique rules, gravity constants, magic levels, or secret currencies to your world.</p>
                     
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-                      {['Kingdom', 'City', 'Language', 'Religion', 'Technology'].map(cat => (
+                      {['Kingdom', 'City', 'Language', 'Religion', 'Technology', 'Faction', 'Magic Rule', 'Flora', 'Currency'].map(cat => (
                         <button 
                           key={cat}
                           onClick={() => setNewFeature(`${cat}: `)}
@@ -442,7 +531,7 @@ const WorldBuilder = () => {
                             color: 'var(--text-muted)'
                           }}
                         >
-                          + Add {cat}
+                          + {cat}
                         </button>
                       ))}
                     </div>
@@ -453,6 +542,7 @@ const WorldBuilder = () => {
                         value={newFeature}
                         onChange={(e) => setNewFeature(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && addFeature()}
+                        style={{ background: 'rgba(0,0,0,0.2)' }}
                       />
                       <button onClick={addFeature} className="btn-secondary" style={{ padding: '10px' }}><Plus size={20} /></button>
                     </div>
@@ -474,12 +564,31 @@ const WorldBuilder = () => {
                     </div>
                   </div>
 
+                  {/* Narrative Sync Section */}
+                  <div className="glass-panel" style={{ padding: '2rem', background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                      <RefreshCw size={20} color="#3b82f6" />
+                      <h4 style={{ margin: 0 }}>Narrative Synchronization</h4>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                      Automatically scan all generated chapters to extract new locations, rules, and lore that appeared during writing.
+                    </p>
+                    <button 
+                      onClick={syncWorldWithChapters} 
+                      disabled={isSyncing || !chapters?.some(c => c.content)}
+                      className="btn btn-primary" 
+                      style={{ width: '100%', background: 'linear-gradient(135deg, #3b82f6, #2563eb)', gap: '0.5rem' }}
+                    >
+                      {isSyncing ? <RefreshCw className="animate-spin" size={16} /> : <><RefreshCw size={16} /> Sync with Narrative</>}
+                    </button>
+                  </div>
+
                   <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), transparent)' }}>
                     <Save size={32} color="var(--primary-color)" style={{ margin: '0 auto 1rem' }} />
                     <h4>World Defined</h4>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>This data will be used by the AI when generating chapters to maintain consistent world rules.</p>
                     
-                    {!chapters?.length && (
+                    {!chapters?.length ? (
                         <button 
                             onClick={() => navigate('/story-builder')} 
                             className="btn btn-primary"
@@ -487,6 +596,14 @@ const WorldBuilder = () => {
                         >
                             <BookOpen size={18} /> Launch Story Engine
                         </button>
+                    ) : (
+                      <button 
+                          onClick={() => navigate('/home')} 
+                          className="btn-secondary"
+                          style={{ width: '100%', gap: '0.5rem' }}
+                      >
+                          <Compass size={18} /> Return to Dashboard
+                      </button>
                     )}
                   </div>
                 </div>
